@@ -1,28 +1,23 @@
-import { IBuyer, ValidError } from "../../../types";
+import { IBuyer, ValidError } from "../../types";
 
 export class Buyer {
-  payment: IBuyer["payment"];
-  email: string;
-  phone: string;
-  address: string;
-  constructor(buyers?: IBuyer) {
-    this.payment = buyers?.payment || "";
-    this.email = buyers?.email || "";
-    this.phone = buyers?.phone || "";
-    this.address = buyers?.address || "";
-  }
-  setModel(buyers: IBuyer) {
-    if (buyers.payment !== undefined) {
-      this.payment = buyers.payment;
+  private payment: IBuyer["payment"] = "";
+  private email: string = "";
+  private phone: string = "";
+  private address: string = "";
+  constructor() {}
+  setModel(buyer: Partial<IBuyer>) {
+    if (buyer.payment !== undefined) {
+      this.payment = buyer.payment;
     }
-    if (buyers.email !== undefined) {
-      this.email = buyers.email;
+    if (buyer.email !== undefined) {
+      this.email = buyer.email;
     }
-    if (buyers.phone !== undefined) {
-      this.phone = buyers.phone;
+    if (buyer.phone !== undefined) {
+      this.phone = buyer.phone;
     }
-    if (buyers.address !== undefined) {
-      this.address = buyers.address;
+    if (buyer.address !== undefined) {
+      this.address = buyer.address;
     }
   }
   getBuyer(): IBuyer {

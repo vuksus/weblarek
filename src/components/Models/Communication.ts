@@ -1,5 +1,5 @@
-import { IProduct, Order } from "../../../types";
-import { Api } from "../Api";
+import { IProduct, Order } from "../../types";
+import { Api } from "../base/Api";
 
 export interface Product {
   items: IProduct[];

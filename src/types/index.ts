@@ -27,9 +27,9 @@ export interface IBuyer {
   address: string;
 }
 
-export interface Order {
-  buyer: IBuyer;
-  product: IProduct;
+export interface Order extends IBuyer {
+  products: string[];
+  total: number;
 }
 
 export type ValidError = Partial<Record<keyof IBuyer, string>>;
