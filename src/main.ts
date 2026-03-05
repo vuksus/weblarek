@@ -61,13 +61,20 @@ async function test() {
       "Выводим в консоль результат поиска товара в корзине по id:",
       cart.searchItem(productsApi.items[0].id),
     );
+    cart.addItem(productsApi.items[1]); // Добавлеиние еще одного товара для проверки корзины
+    console.log(
+      "Список товаров в корзине до частичной очистки",
+      cart.getItems(),
+    );
+    cart.clearItem(productsApi.items[0]); // Метод удаления нужного товара из коризны
     console.log(
       "Выводим в консоль результат удаления нужного товара из корзины:",
-      cart.clearItem(productsApi.items[0]),
+      cart.getItems(),
     );
+    cart.clearCart() // Метод полной очистки корзины
     console.log(
       "Выводим в консоль результат очистки всей корзины",
-      cart.clearCart(),
+      cart.getItems(),
     );
     buyer.setModel(testBuyer); // Метод заполнения новыми данными покупателя
     console.log(

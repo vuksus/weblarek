@@ -3,7 +3,12 @@ import { Api } from "../base/Api";
 
 export interface Product {
   items: IProduct[];
-  total?: number;
+  total: number;
+}
+
+export interface OrderApi {
+  id: string;
+  total: number;
 }
 
 export class Communication {
@@ -20,9 +25,9 @@ export class Communication {
       throw e;
     }
   }
-  async postApi(endpoint: string = "/order/", order: Order): Promise<Order> {
+  async postApi(endpoint: string = "/order/", order: Order): Promise<OrderApi> {
     try {
-      const res = await this.api.post<Order>(endpoint, order);
+      const res = await this.api.post<OrderApi>(endpoint, order);
       return res;
     } catch (e) {
       console.error(e);

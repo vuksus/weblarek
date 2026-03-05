@@ -21,7 +21,7 @@ export class Cart {
   maxItems(): number {
     return this.items.length;
   }
-  searchItem(id: string) {
+  searchItem(id: string): boolean {
     return this.items.some((el) => el.id === id);
   }
 }
