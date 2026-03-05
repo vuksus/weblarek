@@ -28,7 +28,7 @@ export interface IBuyer {
 }
 
 export interface Order extends IBuyer {
-  products: string[];
+  items: string[];
   total: number;
 }
 

@@ -9,11 +9,11 @@ import { API_URL } from "./utils/constants";
 
 const testOrder: Order = {
   payment: "card",
-  email: "string",
-  phone: "string",
-  address: "string",
-  products: ["string"],
-  total: 1,
+  email: "test@test.ru",
+  phone: "+71234567890",
+  address: "Spb Vosstania 1",
+  items: ["854cef69-976d-4c2a-a18c-2aa45046c390"],
+  total: 750,
 };
 
 const testBuyer: IBuyer = {
@@ -31,24 +31,57 @@ async function test() {
     const buyer = new Buyer(); // Экземпляр Buyer
     const cart = new Cart(); // Экземпляр Cart
     const productsApi = await communication.getApi(); // Метод Communication для получения данных с сервера
-    console.log(productsApi); // Вывод в консоль метода getApi()
-    console.log(await communication.postApi("", testOrder)); // Метод Communication для отправки данных на сервер
+    console.log("Выводим в консоль данные полученные с сервера:", productsApi);
+    console.log(
+      "Выводим в консоль данные о товаре и покупателе отправенные на сервер:",
+      await communication.postApi("/order/", testOrder),
+    );
     catalog.setItems(productsApi.items); // Метод Catalog для добавления данных
-    console.log(catalog.getItems()); // Метод Catalog для получения хранящихся данных
-    console.log(catalog.getProductsId(productsApi.items[0].id)); // Метод Catalog для получения товара по id
+    console.log("Выводим в консоль все товары:", catalog.getItems());
+    console.log(
+      "Выводим в консоль результат поиска товара по id",
+      catalog.getProductsId(productsApi.items[0].id),
+    );
     catalog.setThisProduct(productsApi.items[0]); // Метод Catalog для сохранения выбранного товара
-    console.log(catalog.getThisProduct()); // Метод для получения хранящегося выбранного товара
+    console.log("Выводим в консоль выбранный товар:", catalog.getThisProduct());
     cart.addItem(productsApi.items[0]); // Метод добавления выбранного товара в массив
-    console.log(cart.getItems()); // Метод получения массива выбранных товаров
-    console.log(cart.sumItems()); // Метод получения суммы стоимости всех товаров в массиве
-    console.log(cart.maxItems()); // Метод получения общего количества товаров в массиве
-    console.log(cart.searchItem(productsApi.items[0].id)); // Метод поиска товара в массиве по id
-    console.log(cart.clearItem(productsApi.items[0])); // Метод удаления товара из массива
-    console.log(cart.clearCart()); // Метод очистки всего массива
-    buyer.setModel(testBuyer); // Метод заполнения новыми данными
-    console.log(buyer.getBuyer); // Метод получения хранящихся данных
-    console.log(buyer.validate()); // Метод проверки на пустые поля
-    console.log(buyer.clearBuyer()); // Метод удаления всех данных
+    console.log(
+      "Выводим в консоль товары хранящиеся в корзине:",
+      cart.getItems(),
+    );
+    console.log(
+      "Выводим в консоль общую стоимость товаров в корзине:",
+      cart.sumItems(),
+    );
+    console.log(
+      "Выводим в консоль количество товаров в корзине:",
+      cart.maxItems(),
+    );
+    console.log(
+      "Выводим в консоль результат поиска товара в корзине по id:",
+      cart.searchItem(productsApi.items[0].id),
+    );
+    console.log(
+      "Выводим в консоль результат удаления нужного товара из корзины:",
+      cart.clearItem(productsApi.items[0]),
+    );
+    console.log(
+      "Выводим в консоль результат очистки всей корзины",
+      cart.clearCart(),
+    );
+    buyer.setModel(testBuyer); // Метод заполнения новыми данными покупателя
+    console.log(
+      "Выводим в консоль заполненную информацию о покупателе:",
+      buyer.getBuyer,
+    );
+    console.log(
+      "Выводим в консоль результат проверки на заполненные поля:",
+      buyer.validate(),
+    );
+    console.log(
+      "Выводим в консоль результат очистки данных покупателя",
+      buyer.clearBuyer(),
+    );
   } catch (e) {
     console.error(e);
   }
