@@ -66,7 +66,7 @@ async function test() {
       "Список товаров в корзине до частичной очистки",
       cart.getItems(),
     );
-    cart.clearItem(productsApi.items[0]); // Метод удаления нужного товара из коризны
+    cart.clearItem(productsApi.items[0]); // Метод удаления нужного товара из корзины
     console.log(
       "Выводим в консоль результат удаления нужного товара из корзины:",
       cart.getItems(),
