@@ -41,7 +41,8 @@ export class OrderForm extends Form<IOrderForm> {
     this.inputAddress.addEventListener("input", () => {
       this.event.emit("input:address", { value: this.inputAddress.value });
     });
-    this.formButton.addEventListener("click", () => {
+    this.formButton.addEventListener("click", (e) => {
+      e.preventDefault();
       this.event.emit("order:submit");
     });
   }
@@ -49,24 +50,13 @@ export class OrderForm extends Form<IOrderForm> {
   set payment(value: "card" | "cash") {
     this.buttonCard.classList.toggle("button_alt-active", value === "card");
     this.buttonCash.classList.toggle("button_alt-active", value === "cash");
-    this.validateContact();
   }
 
   set address(value: string) {
     this.inputAddress.value = value;
-    this.validateContact();
   }
 
-  validateContact() {
-    const hasAddress = this.inputAddress.value.trim() !== "";
-    const paymentSelected =
-      this.buttonCard.classList.contains("button_alt-active") ||
-      this.buttonCash.classList.contains("button_alt-active");
-
-    if (paymentSelected && hasAddress) {
-      this.formButton.removeAttribute("disabled");
-    } else {
-      this.formButton.setAttribute("disabled", "true");
-    }
+  set valid(value: boolean) {
+    this.formButton.disabled = value;
   }
 }

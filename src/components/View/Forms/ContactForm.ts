@@ -25,6 +25,7 @@ export class ContactForm extends Form<IContactForm> {
       ".form__input[name=phone]",
       this.container,
     );
+    
 
     this.inputEmail.addEventListener("input", () => {
       this.event.emit("input:email", { value: this.inputEmail.value });
@@ -32,29 +33,21 @@ export class ContactForm extends Form<IContactForm> {
     this.inputPhone.addEventListener("input", () => {
       this.event.emit("input:phone", { value: this.inputPhone.value });
     });
-    this.formButton.addEventListener("click", () => {
-      this.event.emit("contact:submit");
-    });
+    this.container.addEventListener("submit", (e) => {
+      e.preventDefault();
+      this.event.emit("contact:submit")
+    })
   }
 
   set email(value: string) {
     this.inputEmail.value = value;
-    this.validateContact();
   }
 
   set phone(value: string) {
     this.inputPhone.value = value;
-    this.validateContact();
   }
 
-  validateContact() {
-    if (
-      this.inputEmail.value.trim() !== "" &&
-      this.inputPhone.value.trim() !== ""
-    ) {
-      this.formButton.removeAttribute("disabled");
-    } else {
-      this.formButton.setAttribute("disabled", "true");
-    }
+  set valid(value: boolean) {
+    this.formButton.disabled = value;
   }
 }

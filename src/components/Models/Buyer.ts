@@ -2,7 +2,7 @@ import { IBuyer, ValidError } from "../../types";
 import { IEvents } from "../base/Events";
 
 export class Buyer {
-  private payment: IBuyer["payment"] = "card";
+  private payment: IBuyer["payment"] = "";
   private email: string = "";
   private phone: string = "";
   private address: string = "";
@@ -24,6 +24,7 @@ export class Buyer {
       this.address = buyer.address;
       this.event.emit("buyer:address");
     }
+    this.event.emit("buyer:changed");
   }
   getBuyer(): IBuyer {
     return {
@@ -34,11 +35,11 @@ export class Buyer {
     };
   }
   clearBuyer(): void {
-    this.payment = "card";
+    this.payment = "";
     this.email = "";
     this.phone = "";
     this.address = "";
-    this.event.emit("buyer:clear");
+    this.event.emit("buyer:changed");
   }
 
   validate(): ValidError {

@@ -17,7 +17,7 @@ export class Cart {
   }
   clearCart(): void {
     this.items = [];
-    this.event.emit("carts:clear");
+    this.event.emit("basket:change");
   }
   sumItems(): number {
     return this.items.reduce((acc, el) => acc + (el.price ?? 0), 0);
@@ -25,7 +25,7 @@ export class Cart {
   maxItems(): number {
     return this.items.length;
   }
-  searchItem(id: string): boolean {
+  isInBasket(id: string): boolean {
     return this.items.some((el) => el.id === id);
   }
 }

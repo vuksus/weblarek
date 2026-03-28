@@ -15,7 +15,7 @@ import { Header } from "./components/View/HeaderView";
 import { Modal } from "./components/View/ModalView";
 import { Success } from "./components/View/SuccessView";
 import "./scss/styles.scss";
-import { Order, IProduct } from "./types";
+import { Order, IProduct, IOrder } from "./types";
 import { API_URL } from "./utils/constants";
 import { cloneTemplate, ensureElement } from "./utils/utils";
 
@@ -34,11 +34,12 @@ async function run() {
     const basket = new Basket(cloneTemplate("#basket"), events);
     const success = new Success(cloneTemplate("#success"), events);
     const modal = new Modal(ensureElement(".modal"), events);
-
     const contactForm = new ContactForm(cloneTemplate("#contacts"), events);
     const orderForm = new OrderForm(cloneTemplate("#order"), events);
 
     const cardPreview = new CardPreview(cloneTemplate("#card-preview"), events);
+
+    let total: number = 0;
 
     events.on("catalog:set", () => {
       const products = catalog.getItems();
@@ -65,10 +66,14 @@ async function run() {
     events.on("thisProduct:set", () => {
       const thisProduct = catalog.getThisProduct();
       if (!thisProduct) return;
-      const inBasket = cart.searchItem(thisProduct.id);
+      const inBasket = cart.isInBasket(thisProduct.id);
       cardPreview.button = inBasket ? "Удалить из корзины" : "Купить";
       if (thisProduct.price === null) {
         cardPreview.button = "Недоступно";
+        cardPreview.valid(true);
+      }
+      else{
+        cardPreview.valid(false);
       }
       modal.content = cardPreview.render(thisProduct);
     });
@@ -76,7 +81,7 @@ async function run() {
     events.on("product:choose", () => {
       const buyProduct = catalog.getThisProduct();
       if (!buyProduct) return;
-      const inBasket = cart.searchItem(buyProduct.id);
+      const inBasket = cart.isInBasket(buyProduct.id);
       if (inBasket) {
         cart.clearItem(buyProduct);
       } else {
@@ -105,11 +110,12 @@ async function run() {
         );
         const renderCard = basketCard.render(buyProduct);
         counter++;
-        basketCard.id = counter;
+        basketCard.index = counter;
         return renderCard;
       });
       header.counter = counter;
       basket.price = cart.sumItems();
+      total = cart.sumItems();
       basket.list = arrProducts;
     });
 
@@ -144,6 +150,12 @@ async function run() {
       } else if (errors.payment) {
         valid = `${errors.payment}`;
       }
+      orderForm.error = valid;
+      if (!errors.payment && !errors.address) {
+        orderForm.valid = false;
+      } else {
+        orderForm.valid = true;
+      }
     });
 
     events.on("input:address", (data: { value: string }) => {
@@ -161,6 +173,12 @@ async function run() {
         valid = `${errors.address}`;
       } else if (errors.payment) {
         valid = `${errors.payment}`;
+      }
+      orderForm.error = valid;
+      if (!errors.payment && !errors.address) {
+        orderForm.valid = false;
+      } else {
+        orderForm.valid = true;
       }
     });
 
@@ -184,6 +202,12 @@ async function run() {
       } else if (errors.email) {
         valid = `${errors.email}`;
       }
+      contactForm.error = valid;
+      if (!errors.email && !errors.phone) {
+        contactForm.valid = false;
+      } else {
+        contactForm.valid = true;
+      }
     });
 
     events.on("input:phone", (data: { value: string }) => {
@@ -201,6 +225,12 @@ async function run() {
         valid = `${errors.phone}`;
       } else if (errors.email) {
         valid = `${errors.email}`;
+      };
+      contactForm.error = valid;
+      if (!errors.email && !errors.phone) {
+        contactForm.valid = false;
+      } else {
+        contactForm.valid = true;
       }
     });
 
@@ -231,28 +261,48 @@ async function run() {
       basket.list = [];
     });
 
-    events.on("api:post", (response: Order) => {
+    events.on("api:post", (response: IOrder) => {
       cart.clearCart();
       buyer.clearBuyer();
       success.total = response.total;
       modal.content = success.render();
     });
 
-    events.on("basket:clear", () => {
-      const productsInBasket: HTMLElement[] = [];
-      const basketCounter = 0;
+    events.on("basket:change", () => {
+    const productsInBasket = basket.list;
+    if(productsInBasket && productsInBasket.length) {
+      const basketCounter = productsInBasket.length;
 
-      header.counter = basketCounter;
-      basket.price = cart.sumItems();
-      basket.list = productsInBasket;
+    header.counter = basketCounter;
+    basket.price = cart.sumItems();
+    basket.list = productsInBasket;
+    }
     });
 
-    events.on("buyer:clear", () => {
-      orderForm.payment = "card";
-      orderForm.address = "";
-      contactForm.email = "";
-      contactForm.phone = "";
-    });
+    events.on('buyer:changed', () => {
+  const buyerInfo = buyer.getBuyer();
+  const errors = buyer.validate();
+
+  if (buyerInfo.payment === "card" || buyerInfo.payment === "cash") {
+    orderForm.payment = buyerInfo.payment;
+  }
+  orderForm.address = buyerInfo.address;
+  contactForm.email = buyerInfo.email;
+  contactForm.phone = buyerInfo.phone;
+
+  if (errors.payment || errors.address) {
+    contactForm.error = `${errors.email || ''} ${errors.phone || ''}`.trim();
+  } else {
+    contactForm.error = '';
+  }
+
+  contactForm.valid = !errors.email && !errors.phone;
+  if (errors.email || errors.phone) {
+    contactForm.valid = true;
+  } else {
+    contactForm.valid = false;
+  }
+});
 
     events.on("success:close", () => {
       modal.close();

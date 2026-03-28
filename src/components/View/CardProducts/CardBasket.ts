@@ -3,7 +3,7 @@ import { ensureElement } from "../../../utils/utils";
 import { Card } from "./Card";
 
 interface ICardBusket {
-  id: string;
+  index: string;
 }
 
 export class CardBasket extends Card<ICardBusket> {
@@ -30,7 +30,7 @@ export class CardBasket extends Card<ICardBusket> {
     }
   }
 
-  set id(value: number) {
+  set index(value: number) {
     this.itemId.textContent = String(value);
   }
 }

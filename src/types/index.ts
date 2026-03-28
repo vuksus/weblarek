@@ -32,6 +32,11 @@ export interface Order extends IBuyer {
   total: number;
 }
 
+export interface IOrder {
+  id?: string;
+  total: number;
+}
+
 export type ValidError = Partial<Record<keyof IBuyer, string>>;
 
 export interface ICardAction {

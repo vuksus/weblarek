@@ -1,4 +1,4 @@
-import { IProduct, Order } from "../../types";
+import { IOrder, IProduct} from "../../types";
 import { Api } from "../base/Api";
 
 export interface Product {
@@ -25,7 +25,7 @@ export class Communication {
       throw e;
     }
   }
-  async postApi(endpoint: string = "/order/", order: Order): Promise<OrderApi> {
+  async postApi(endpoint: string = "/order/", order: IOrder): Promise<OrderApi> {
     try {
       const res = await this.api.post<OrderApi>(endpoint, order);
       return res;

@@ -64,4 +64,8 @@ export class CardPreview extends Card<ICardPreview> {
   set button(value: string) {
     this.cardButton.textContent = value;
   }
+
+  valid(value: boolean) {
+    this.cardButton.disabled = value;
+  }
 }

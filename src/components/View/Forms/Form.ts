@@ -20,10 +20,6 @@ export class Form<T> extends Component<T & IForm> {
       ".form__errors",
       this.container,
     );
-
-    this.formButton.addEventListener("click", (e) => {
-      e.preventDefault();
-    });
   }
 
   set error(value: string) {
