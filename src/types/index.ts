@@ -33,3 +33,7 @@ export interface Order extends IBuyer {
 }
 
 export type ValidError = Partial<Record<keyof IBuyer, string>>;
+
+export interface ICardAction {
+  onClick(): void;
+}

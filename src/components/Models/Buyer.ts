@@ -1,23 +1,28 @@
 import { IBuyer, ValidError } from "../../types";
+import { IEvents } from "../base/Events";
 
 export class Buyer {
-  private payment: IBuyer["payment"] = "";
+  private payment: IBuyer["payment"] = "card";
   private email: string = "";
   private phone: string = "";
   private address: string = "";
-  constructor() {}
+  constructor(protected event: IEvents) {}
   setModel(buyer: Partial<IBuyer>) {
     if (buyer.payment !== undefined) {
       this.payment = buyer.payment;
+      this.event.emit("buyer:payment");
     }
     if (buyer.email !== undefined) {
       this.email = buyer.email;
+      this.event.emit("buyer:email");
     }
     if (buyer.phone !== undefined) {
       this.phone = buyer.phone;
+      this.event.emit("buyer:phone");
     }
     if (buyer.address !== undefined) {
       this.address = buyer.address;
+      this.event.emit("buyer:address");
     }
   }
   getBuyer(): IBuyer {
@@ -29,10 +34,11 @@ export class Buyer {
     };
   }
   clearBuyer(): void {
-    this.payment = "";
+    this.payment = "card";
     this.email = "";
     this.phone = "";
     this.address = "";
+    this.event.emit("buyer:clear");
   }
 
   validate(): ValidError {

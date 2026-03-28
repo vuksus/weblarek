@@ -1,97 +1,272 @@
 import { Api } from "./components/base/Api";
+import { EventEmitter } from "./components/base/Events";
 import { Buyer } from "./components/Models/Buyer";
 import { Cart } from "./components/Models/Cart";
 import { Catalog } from "./components/Models/Catalog";
 import { Communication } from "./components/Models/Communication";
+import { Basket } from "./components/View/BasketView";
+import { CardBasket } from "./components/View/CardProducts/CardBasket";
+import { CardCatalog } from "./components/View/CardProducts/CardCatalog";
+import { CardPreview } from "./components/View/CardProducts/CardPreview";
+import { ContactForm } from "./components/View/Forms/ContactForm";
+import { OrderForm } from "./components/View/Forms/OrderForm";
+import { Gallery } from "./components/View/GalleryView";
+import { Header } from "./components/View/HeaderView";
+import { Modal } from "./components/View/ModalView";
+import { Success } from "./components/View/SuccessView";
 import "./scss/styles.scss";
-import { IBuyer, Order } from "./types";
+import { Order, IProduct } from "./types";
 import { API_URL } from "./utils/constants";
+import { cloneTemplate, ensureElement } from "./utils/utils";
 
-const testOrder: Order = {
-  payment: "card",
-  email: "test@test.ru",
-  phone: "+71234567890",
-  address: "Spb Vosstania 1",
-  items: ["854cef69-976d-4c2a-a18c-2aa45046c390"],
-  total: 750,
-};
-
-const testBuyer: IBuyer = {
-  payment: "",
-  email: "string",
-  phone: "string",
-  address: "string",
-};
-
-async function test() {
+async function run() {
   try {
-    const url = new Api(API_URL); // Экземпляр Api
-    const communication = new Communication(url); //Экземпляр Communication
-    const catalog = new Catalog(); // Экземпляр Catalog
-    const buyer = new Buyer(); // Экземпляр Buyer
-    const cart = new Cart(); // Экземпляр Cart
-    const productsApi = await communication.getApi(); // Метод Communication для получения данных с сервера
-    console.log("Выводим в консоль данные полученные с сервера:", productsApi);
-    console.log(
-      "Выводим в консоль данные о товаре и покупателе отправенные на сервер:",
-      await communication.postApi("/order/", testOrder),
-    );
-    catalog.setItems(productsApi.items); // Метод Catalog для добавления данных
-    console.log("Выводим в консоль все товары:", catalog.getItems());
-    console.log(
-      "Выводим в консоль результат поиска товара по id",
-      catalog.getProductsId(productsApi.items[0].id),
-    );
-    catalog.setThisProduct(productsApi.items[0]); // Метод Catalog для сохранения выбранного товара
-    console.log("Выводим в консоль выбранный товар:", catalog.getThisProduct());
-    cart.addItem(productsApi.items[0]); // Метод добавления выбранного товара в массив
-    console.log(
-      "Выводим в консоль товары хранящиеся в корзине:",
-      cart.getItems(),
-    );
-    console.log(
-      "Выводим в консоль общую стоимость товаров в корзине:",
-      cart.sumItems(),
-    );
-    console.log(
-      "Выводим в консоль количество товаров в корзине:",
-      cart.maxItems(),
-    );
-    console.log(
-      "Выводим в консоль результат поиска товара в корзине по id:",
-      cart.searchItem(productsApi.items[0].id),
-    );
-    cart.addItem(productsApi.items[1]); // Добавлеиние еще одного товара для проверки корзины
-    console.log(
-      "Список товаров в корзине до частичной очистки",
-      cart.getItems(),
-    );
-    cart.clearItem(productsApi.items[0]); // Метод удаления нужного товара из корзины
-    console.log(
-      "Выводим в консоль результат удаления нужного товара из корзины:",
-      cart.getItems(),
-    );
-    cart.clearCart() // Метод полной очистки корзины
-    console.log(
-      "Выводим в консоль результат очистки всей корзины",
-      cart.getItems(),
-    );
-    buyer.setModel(testBuyer); // Метод заполнения новыми данными покупателя
-    console.log(
-      "Выводим в консоль заполненную информацию о покупателе:",
-      buyer.getBuyer,
-    );
-    console.log(
-      "Выводим в консоль результат проверки на заполненные поля:",
-      buyer.validate(),
-    );
-    console.log(
-      "Выводим в консоль результат очистки данных покупателя",
-      buyer.clearBuyer(),
-    );
+    const events = new EventEmitter();
+
+    const url = new Api(API_URL);
+    const communication = new Communication(url);
+    const catalog = new Catalog(events);
+    const buyer = new Buyer(events);
+    const cart = new Cart(events);
+
+    const header = new Header(ensureElement(".header"), events);
+    const gallery = new Gallery(ensureElement(".page__wrapper"), events);
+    const basket = new Basket(cloneTemplate("#basket"), events);
+    const success = new Success(cloneTemplate("#success"), events);
+    const modal = new Modal(ensureElement(".modal"), events);
+
+    const contactForm = new ContactForm(cloneTemplate("#contacts"), events);
+    const orderForm = new OrderForm(cloneTemplate("#order"), events);
+
+    const cardPreview = new CardPreview(cloneTemplate("#card-preview"), events);
+
+    events.on("catalog:set", () => {
+      const products = catalog.getItems();
+      const cards = products.map((product) => {
+        const card = new CardCatalog(
+          cloneTemplate<HTMLTemplateElement>("#card-catalog"),
+          {
+            onClick: () => events.emit("product:select", product),
+          },
+        );
+        return card.render(product);
+      });
+      gallery.catalog = cards;
+    });
+
+    events.on("basket:open", () => {
+      modal.content = basket.render();
+    });
+
+    events.on("product:select", (product: IProduct) => {
+      catalog.setThisProduct(product);
+    });
+
+    events.on("thisProduct:set", () => {
+      const thisProduct = catalog.getThisProduct();
+      if (!thisProduct) return;
+      const inBasket = cart.searchItem(thisProduct.id);
+      cardPreview.button = inBasket ? "Удалить из корзины" : "Купить";
+      if (thisProduct.price === null) {
+        cardPreview.button = "Недоступно";
+      }
+      modal.content = cardPreview.render(thisProduct);
+    });
+
+    events.on("product:choose", () => {
+      const buyProduct = catalog.getThisProduct();
+      if (!buyProduct) return;
+      const inBasket = cart.searchItem(buyProduct.id);
+      if (inBasket) {
+        cart.clearItem(buyProduct);
+      } else {
+        cart.addItem(buyProduct);
+      }
+      modal.close();
+    });
+
+    events.on("product:delete", (product: IProduct) => {
+      const deleteProduct = catalog.getProductsId(product.id);
+      if (!deleteProduct) return;
+      cart.clearItem(deleteProduct);
+    });
+
+    events.on("basket:change", () => {
+      const products = cart.getItems();
+      let counter = 0;
+
+      const arrProducts = products.map((product) => {
+        const buyProduct = catalog.getProductsId(product.id);
+        const basketCard = new CardBasket(
+          cloneTemplate<HTMLElement>("#card-basket"),
+          {
+            onClick: () => events.emit("product:delete", product),
+          },
+        );
+        const renderCard = basketCard.render(buyProduct);
+        counter++;
+        basketCard.id = counter;
+        return renderCard;
+      });
+      header.counter = counter;
+      basket.price = cart.sumItems();
+      basket.list = arrProducts;
+    });
+
+    events.on("basket:submit", () => {
+      modal.content = orderForm.render();
+    });
+
+    events.on("buyer:card", () => {
+      buyer.setModel({
+        payment: "card",
+      });
+    });
+
+    events.on("buyer:cash", () => {
+      buyer.setModel({
+        payment: "cash",
+      });
+    });
+
+    events.on("buyer:payment", () => {
+      const thisPayment = buyer.getBuyer();
+      const validPayments: ("card" | "cash")[] = ["card", "cash"];
+      if (validPayments.includes(thisPayment.payment as "card" | "cash")) {
+        orderForm.payment = thisPayment.payment as "card" | "cash";
+      }
+      const errors = buyer.validate();
+      let valid: string = "";
+      if (errors.payment && errors.address) {
+        valid = `${errors.address}; ${errors.payment}`;
+      } else if (errors.address) {
+        valid = `${errors.address}`;
+      } else if (errors.payment) {
+        valid = `${errors.payment}`;
+      }
+    });
+
+    events.on("input:address", (data: { value: string }) => {
+      buyer.setModel({ address: data.value });
+    });
+
+    events.on("buyer:address", () => {
+      const address = buyer.getBuyer().address;
+      orderForm.address = address;
+      const errors = buyer.validate();
+      let valid: string = "";
+      if (errors.payment && errors.address) {
+        valid = `${errors.address}; ${errors.payment}`;
+      } else if (errors.address) {
+        valid = `${errors.address}`;
+      } else if (errors.payment) {
+        valid = `${errors.payment}`;
+      }
+    });
+
+    events.on("order:submit", () => {
+      modal.content = contactForm.render();
+    });
+
+    events.on("input:email", (data: { value: string }) => {
+      buyer.setModel({ email: data.value });
+    });
+
+    events.on("buyer:email", () => {
+      const email = buyer.getBuyer().email;
+      contactForm.email = email;
+      const errors = buyer.validate();
+      let valid: string = "";
+      if (errors.phone && errors.email) {
+        valid = `${errors.email}; ${errors.phone}`;
+      } else if (errors.phone) {
+        valid = `${errors.phone}`;
+      } else if (errors.email) {
+        valid = `${errors.email}`;
+      }
+    });
+
+    events.on("input:phone", (data: { value: string }) => {
+      buyer.setModel({ phone: data.value });
+    });
+
+    events.on("buyer:phone", () => {
+      const phone = buyer.getBuyer().phone;
+      contactForm.phone = phone;
+      const errors = buyer.validate();
+      let valid: string = "";
+      if (errors.phone && errors.email) {
+        valid = `${errors.email}; ${errors.phone}`;
+      } else if (errors.phone) {
+        valid = `${errors.phone}`;
+      } else if (errors.email) {
+        valid = `${errors.email}`;
+      }
+    });
+
+    events.on("contact:submit", async () => {
+      const buyerInfo = buyer.getBuyer();
+      const sum = cart.sumItems();
+      const products = cart.getItems();
+      const ids = products.map((elem) => elem.id);
+      const orderRequest: Order = {
+        payment: buyerInfo.payment,
+        email: buyerInfo.email,
+        address: buyerInfo.address,
+        phone: buyerInfo.phone,
+        total: sum,
+        items: ids,
+      };
+      try {
+        const response = await communication.postApi("/order/", orderRequest);
+        events.emit("api:post", response);
+      } catch (error) {
+        throw error;
+      }
+    });
+
+    events.on("carts:clear", () => {
+      header.counter = 0;
+      basket.price = 0;
+      basket.list = [];
+    });
+
+    events.on("api:post", (response: Order) => {
+      cart.clearCart();
+      buyer.clearBuyer();
+      success.total = response.total;
+      modal.content = success.render();
+    });
+
+    events.on("basket:clear", () => {
+      const productsInBasket: HTMLElement[] = [];
+      const basketCounter = 0;
+
+      header.counter = basketCounter;
+      basket.price = cart.sumItems();
+      basket.list = productsInBasket;
+    });
+
+    events.on("buyer:clear", () => {
+      orderForm.payment = "card";
+      orderForm.address = "";
+      contactForm.email = "";
+      contactForm.phone = "";
+    });
+
+    events.on("success:close", () => {
+      modal.close();
+    });
+
+    events.on("modal:close", () => {
+      modal.close();
+    });
+
+    const response = await communication.getApi();
+    catalog.setItems(response.items);
   } catch (e) {
     console.error(e);
   }
 }
 
-test();
+run();
