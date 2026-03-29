@@ -31,14 +31,13 @@ export class Modal extends Component<IModal> {
 
     this.container.addEventListener("click", (e) => {
       if (e.target === this.container) {
-        this.events.emit("modal:close");
+        this.close();
       }
     });
   }
 
   set content(item: HTMLElement) {
     this.modalContent.replaceChildren(item);
-    this.open();
   }
 
   open(): void {

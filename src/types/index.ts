@@ -32,8 +32,8 @@ export interface Order extends IBuyer {
   total: number;
 }
 
-export interface IOrder {
-  id?: string;
+export interface IOrderResponse {
+  id: string;
   total: number;
 }
 

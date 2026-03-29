@@ -15,7 +15,7 @@ import { Header } from "./components/View/HeaderView";
 import { Modal } from "./components/View/ModalView";
 import { Success } from "./components/View/SuccessView";
 import "./scss/styles.scss";
-import { Order, IProduct, IOrder } from "./types";
+import { Order, IProduct, IOrderResponse } from "./types";
 import { API_URL } from "./utils/constants";
 import { cloneTemplate, ensureElement } from "./utils/utils";
 
@@ -39,8 +39,6 @@ async function run() {
 
     const cardPreview = new CardPreview(cloneTemplate("#card-preview"), events);
 
-    let total: number = 0;
-
     events.on("catalog:set", () => {
       const products = catalog.getItems();
       const cards = products.map((product) => {
@@ -57,6 +55,7 @@ async function run() {
 
     events.on("basket:open", () => {
       modal.content = basket.render();
+      modal.open();
     });
 
     events.on("product:select", (product: IProduct) => {
@@ -76,6 +75,7 @@ async function run() {
         cardPreview.valid(false);
       }
       modal.content = cardPreview.render(thisProduct);
+      modal.open();
     });
 
     events.on("product:choose", () => {
@@ -115,12 +115,13 @@ async function run() {
       });
       header.counter = counter;
       basket.price = cart.sumItems();
-      total = cart.sumItems();
+      success.total = cart.sumItems();
       basket.list = arrProducts;
     });
 
     events.on("basket:submit", () => {
       modal.content = orderForm.render();
+      modal.open();
     });
 
     events.on("buyer:card", () => {
@@ -184,6 +185,7 @@ async function run() {
 
     events.on("order:submit", () => {
       modal.content = contactForm.render();
+      modal.open();
     });
 
     events.on("input:email", (data: { value: string }) => {
@@ -261,45 +263,36 @@ async function run() {
       basket.list = [];
     });
 
-    events.on("api:post", (response: IOrder) => {
+    events.on("api:post", (response: IOrderResponse) => {
       cart.clearCart();
       buyer.clearBuyer();
       success.total = response.total;
       modal.content = success.render();
-    });
-
-    events.on("basket:change", () => {
-    const productsInBasket = basket.list;
-    if(productsInBasket && productsInBasket.length) {
-      const basketCounter = productsInBasket.length;
-
-    header.counter = basketCounter;
-    basket.price = cart.sumItems();
-    basket.list = productsInBasket;
-    }
+      modal.open();
     });
 
     events.on('buyer:changed', () => {
-  const buyerInfo = buyer.getBuyer();
-  const errors = buyer.validate();
+  const buyerInfo = buyer.getBuyer(); 
+  const errors = buyer.validate(); 
 
-  if (buyerInfo.payment === "card" || buyerInfo.payment === "cash") {
-    orderForm.payment = buyerInfo.payment;
+  // Обновление данных формы
+  if (buyerInfo.payment === "card" || buyerInfo.payment === "cash") { 
+    orderForm.payment = buyerInfo.payment; 
+  } 
+
+  orderForm.address = buyerInfo.address; 
+  contactForm.email = buyerInfo.email; 
+  contactForm.phone = buyerInfo.phone; 
+
+  if (errors.payment || errors.address) { 
+    orderForm.valid = true; 
+  } else { 
+    orderForm.valid = false; 
   }
-  orderForm.address = buyerInfo.address;
-  contactForm.email = buyerInfo.email;
-  contactForm.phone = buyerInfo.phone;
-
-  if (errors.payment || errors.address) {
-    contactForm.error = `${errors.email || ''} ${errors.phone || ''}`.trim();
-  } else {
-    contactForm.error = '';
+  if(errors.email || errors.phone) {
+    contactForm.valid = true
   }
-
-  contactForm.valid = !errors.email && !errors.phone;
-  if (errors.email || errors.phone) {
-    contactForm.valid = true;
-  } else {
+  else {
     contactForm.valid = false;
   }
 });
